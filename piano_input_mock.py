@@ -16,13 +16,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import Queue
+import queue
 import thread
 import time
 
 class PianoInput(object):
   def __init__(self):
-    self.user_input = Queue.Queue()
+    self.user_input = queue.Queue()
     thread.start_new_thread(self.GetPianoSignal, ())
 
   def ClearInput(self):
@@ -32,11 +32,11 @@ class PianoInput(object):
   def GetPianoSignal(self):
     while True:
       try:
-        print "Important notes: '-'=36 '+'=40  '<'=48 'Play'=50 '>'=52"
+        print("Important notes: '-'=36 '+'=40  '<'=48 'Play'=50 '>'=52")
         note = int(raw_input("<note> (e.g. '37'): "))
         self.user_input.put((note, 50))
         time.sleep(1)
         self.user_input.put((note, 0))
       except:
-        print "Bad input"
+        print("Bad input")
 

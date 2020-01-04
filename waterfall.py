@@ -125,7 +125,7 @@ class Waterfall(object):
                 'for note %d' % event.note)
         draw_state[event.note] = cur_time
       else:
-        print 'Warning: Waterfall.Draw ignoring cmd %02X' % event.cmd
+        print('Warning: Waterfall.Draw ignoring cmd %02X' % event.cmd)
     # Everything that's still playing should get a rect to end of screen.
     for note, state in enumerate(draw_state):
       if state >= 0:

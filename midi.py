@@ -65,7 +65,7 @@ class MidiChunk(object):
     """Read the chunk from a file stream."""
     self.id = file.read(4)
     byte_len = ReadInt32(file.read(4))
-    print 'Reading chunk of type [%s], length %d' % (self.id, byte_len)
+    print('Reading chunk of type [%s], length %d' % (self.id, byte_len))
     self.data = file.read(byte_len)
 
   def Validate(self):
@@ -78,17 +78,17 @@ class MidiHeader(MidiChunk):
     super(MidiHeader, self).__init__(file)
     self.format = ReadInt16(self.data[0:2])
     self.num_tracks = ReadInt16(self.data[2:4])
-    print 'This is a Format %d MIDI file' % self.format
+    print('This is a Format %d MIDI file' % self.format)
     division = ReadInt16(self.data[4:])
     if division & 0x8000:
       self.ticks_per_note = (division & 0x00ff)
       self.notes_per_sec = (division & 0x7f00) >> 8
-      print 'Ticks per frame: %d' % self.ticks_per_note
-      print 'Frames per sec: %d' % self.notes_per_sec
+      print('Ticks per frame: %d' % self.ticks_per_note)
+      print('Frames per sec: %d' % self.notes_per_sec)
     else:
       self.ticks_per_note = division
       self.notes_per_sec = 2
-      print 'Ticks per quarter note: %d' % self.ticks_per_note
+      print('Ticks per quarter note: %d' % self.ticks_per_note)
 
   def Validate(self):
     assert self.id == 'MThd'
@@ -117,7 +117,7 @@ class MidiTrack(MidiChunk):
         event.delta += 300  # Add a delay before the song starts.
       self.events.append(event)
       prev_event = event
-    print 'Read track with %d events' % len(self.events)
+    print('Read track with %d events' % len(self.events))
 
   def Validate(self):
     assert self.id == 'MTrk'
@@ -246,7 +246,7 @@ class MidiFile(object):
       self.tracks = []
       self.tempo_map = [
           (0, self.header.ticks_per_note*self.header.notes_per_sec)]
-      print 'Midi file contains %d tracks' % self.header.num_tracks
+      print('Midi file contains %d tracks' % self.header.num_tracks)
       for i in xrange(self.header.num_tracks):
         skip_ignores = True
         if self.header.format == 1 and i == 0:
@@ -262,13 +262,13 @@ class MidiFile(object):
           if event.cmd == 0xff and event.type == 0x51:
             tempo = ReadInt24(event.data) / 1.e6
             notes_per_sec = 1.0 / tempo
-            print 'Time %d: Found tempo %.6f' % (cur_time, tempo)
-            print 'Deduced notes per sec: %.2f' % notes_per_sec
+            print('Time %d: Found tempo %.6f' % (cur_time, tempo))
+            print('Deduced notes per sec: %.2f' % notes_per_sec)
             self.tempo_map.append(
                 (cur_time, self.header.ticks_per_note*notes_per_sec))
-    print 'Tempo map:'
+    print('Tempo map:')
     for start_time, tempo in self.tempo_map:
-      print '  %7d ticks: Tempo=%f' % (start_time, tempo)
+      print('  %7d ticks: Tempo=%f' % (start_time, tempo))
 
   def GetTicksPerSec(self, time):
     """Get the tempo (in ticks per sec) at the specified time (in ticks)."""

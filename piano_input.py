@@ -15,33 +15,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import Queue
-import thread
+import queue
+import _thread
 import time
 import usb.core
 import usb.util
 
 class PianoInput(object):
   def __init__(self):
-    self.user_input = Queue.Queue()
+    self.user_input = queue.Queue()
     endpoint_address = self._attach_device()
-    thread.start_new_thread(self.GetPianoSignal, (endpoint_address, ))
+    _thread.start_new_thread(self.GetPianoSignal, (endpoint_address, ))
 
   def _attach_device(self):
     self.dev = usb.core.find(custom_match=PianoInput.IsMidiUsbDevice)
     if not self.dev:
       raise IOError('Could not find a USB MIDI Streaming device')
-    print self.dev
+    print("Device attached!")
 
     self.reattach0 = False
     self.reattach1 = False
     # detach from kernel device
     if self.dev.is_kernel_driver_active(0):
-        print "detaching...0"
+        print("detaching...0")
         self.reattach0 = True
         self.dev.detach_kernel_driver(0)
     if self.dev.is_kernel_driver_active(1):
-        print "detaching...1"
+        print("detaching...1")
         self.reattach1 = True
         self.dev.detach_kernel_driver(1)
 
@@ -85,10 +85,15 @@ class PianoInput(object):
   def GetPianoSignal(self, endpoint_address):
     NOTE_ON = 0x90
     NOTE_OFF = 0x80
+    CONTROL_CHANGE = 0xB0
     while True:
       try:
         ret = self.dev.read(endpoint_address, 32, 10000)
-      except usb.core.USBError:
+      except usb.core.USBError as usbEx:
+        if usbEx.errno == 110:
+          continue
+        print('USBError?')
+        print(usbEx)
         # Attempt to reconnect
         endpoint_address = None
         while not endpoint_address:
@@ -98,11 +103,14 @@ class PianoInput(object):
           except Exception as ex:
             print('Connection failed (%s), waiting 1 second...' % ex)
             time.sleep(1.0)
-      midiCmd = ret[1]
+      midiCmd = ret[1] % 0xF0
+      midiChannel = ret[1] & 0xF
       if (midiCmd == NOTE_ON or midiCmd == NOTE_OFF):
-          note = ret[2]
-          volume = ret[3]
-          if midiCmd == NOTE_OFF:
-            volume = 0
-          print note, (midiCmd, self.GetNote(note).lower(), volume)
-          self.user_input.put((note, volume))
+        note = ret[2]
+        volume = ret[3]
+        if midiCmd == NOTE_OFF:
+          volume = 0
+        #print(note, (midiCmd, self.GetNote(note).lower(), volume))
+        self.user_input.put((note, volume, midiCmd))
+      elif midiCmd == CONTROL_CHANGE:
+        print('Control change message')
